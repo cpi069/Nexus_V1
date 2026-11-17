@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus V1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .emoji-picker {
+            display: none;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+        .emoji-picker.active {
+            display: grid;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex items-center justify-center overflow-hidden text-slate-800">
+
+    <!-- Single Tab Enforcement Overlay -->
+    <div id="singleTabOverlay" class="fixed inset-0 z-50 bg-slate-900 text-white flex flex-col items-center justify-center hidden">
+        <i class="fas fa-exclamation-triangle text-6xl text-yellow-400 mb-4"></i>
+        <h1 class="text-3xl font-bold mb-2">Tab Already Open</h1>
+        <p class="text-slate-300 max-w-md text-center">
+            Nexus Chat is already open in another tab on this device. Please close this tab or use the active one to continue messaging.
+        </p>
+    </div>
+
+    <!-- Login / Setup Overlay -->
+    <div id="loginOverlay" class="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Welcome to Nexus</h2>
+                <p class="text-slate-500 mt-1">Enter your display name to join the group.</p>
+            </div>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <input type="text" id="displayNameInput" placeholder="Your Name" required maxlength="20" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-800 placeholder-slate-400">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl transition-all shadow-md shadow-blue-500/20 active:scale-[0.98]">
+                    Join Chat
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300" id="customModalContent">
+            <h3 class="text-lg font-bold text-slate-800 mb-2" id="modalTitle">Notification</h3>
+            <p class="text-slate-600 mb-6" id="modalMessage">Message goes here.</p>
+            <div class="flex justify-end">
+                <button onclick="closeModal()" class="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="w-full h-full max-w-5xl mx-auto flex flex-col sm:flex-row bg-white sm:rounded-2xl sm:shadow-2xl sm:h-[90vh] overflow-hidden relative">
+        
+        <!-- Sidebar -->
+        <div class="w-full sm:w-80 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0">
+            <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-md">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-slate-800">Nexus Chat</h1>
+                        <p class="text-xs text-green-500 font-medium flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 flex-1 overflow-y-auto">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Group Info</h3>
+                <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm mb-4">
+                    <p class="text-sm text-slate-600">This is a global public room. Messages are visible to anyone in this space.</p>
+                </div>
+                
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 mt-6">My Profile</h3>
+                <div class="flex items-center gap-3 p-2">
+                    <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold" id="myAvatar">?</div>
+                    <div>
+                        <p class="font-semibold text-slate-800" id="myNameDisplay">Anonymous</p>
+                        <button onclick="changeName()" class="text-xs text-blue-500 hover:underline">Change Name</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col bg-white relative h-full">
+            
+            <!-- Chat Header -->
+            <div class="h-16 border-b border-slate-200 flex items-center px-6 justify-between glass-panel z-10 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <h2 class="font-bold text-slate-800 text-lg">Global Room</h2>
+                    <span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded-md font-medium" id="messageCount">0 msgs</span>
+                </div>
+                <!-- Notifications Toast Container (Absolute) -->
+                <div id="notificationToast" class="absolute top-4 right-1/2 transform translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 opacity-0 -translate-y-4 pointer-events-none">
+                    <i class="fas fa-bell"></i>
+                    <span id="notificationText">0 new messages</span>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
+                <!-- Messages will be injected here -->
+                <div class="flex items-center justify-center h-full text-slate-400" id="loadingMessages">
+                    <i class="fas fa-circle-notch fa-spin text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 bg-white border-t border-slate-200 relative">
+                
+                <!-- Emoji Picker -->
+                <div id="emojiPicker" class="emoji-picker absolute bottom-20 left-4 bg-white border border-slate-200 shadow-xl rounded-xl p-3 z-20 w-64 max-h-48 overflow-y-auto">
+                    <!-- Emojis populated by JS -->
+                </div>
+
+                <!-- File Preview -->
+                <div id="filePreviewContainer" class="hidden absolute bottom-20 left-4 bg-white border border-slate-200 shadow-lg rounded-xl p-2 z-10 flex items-center gap-3">
+                    <div id="filePreviewIcon" class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-slate-500"></div>
+                    <div class="flex-1 truncate w-32 text-sm text-slate-700" id="filePreviewName">file.jpg</div>
+                    <button onclick="clearFile()" class="text-red-500 hover:bg-red-50 p-1 rounded"><i class="fas fa-times"></i></button>
+                </div>
+
+                <form id="messageForm" class="flex items-end gap-2">
+                    <button type="button" id="emojiBtn" class="p-3 text-slate-400 hover:text-blue-500 transition-colors flex-shrink-0">
+                        <i class="far fa-smile text-xl"></i>
+                    </button>
+                    
+                    <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.txt,.doc,.docx">
+                    <button type="button" onclick="document.getElementById('fileInput').click()" class="p-3 text-slate-400 hover:text-blue-500 transition-colors flex-shrink-0">
+                        <i class="fas fa-paperclip text-xl"></i>
+                    </button>
+
+                    <div class="flex-1 bg-slate-100 rounded-2xl relative flex items-center border border-transparent focus-within:border-blue-300 focus-within:bg-white transition-all shadow-sm">
+                        <input type="text" id="messageInput" autocomplete="off" placeholder="Type a message..." class="w-full bg-transparent px-4 py-3 rounded-2xl focus:outline-none text-slate-800">
+                    </div>
+
+                    <button type="submit" id="sendBtn" class="bg-blue-500 hover:bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 transition-transform active:scale-95 disabled:opacity-50 flex-shrink-0">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Setup -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Configuration & Globals ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-nexus-chat';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Mock config fallback for local dev visualizer (will fail auth without real config, but structure holds)
+            apiKey: "mock-key", projectId: "mock-project"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth, currentUser;
+        let displayName = localStorage.getItem('nexus_displayName') || '';
+        let lastReadTime = parseInt(localStorage.getItem('nexus_lastRead') || '0', 10);
+        let activeFile = null;
+        let activeFileDataUrl = null;
+        const MAX_FILE_SIZE = 500 * 1024; // 500KB limit for Firestore document limits
+
+        // Emojis for picker
+        const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','worried','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾'];
+
+        // --- Single Tab Enforcement via BroadcastChannel ---
+        // We use BroadcastChannel to ensure only one tab per device is active.
+        const channel = new BroadcastChannel('nexus_chat_channel');
+        const tabId = crypto.randomUUID();
+        let isPrimaryTab = true;
+
+        channel.onmessage = (event) => {
+            if (event.data === 'ping') {
+                // Another tab opened and is asking if anyone is here. Tell them we are.
+                channel.postMessage('pong');
+            }
+            if (event.data === 'pong' && isPrimaryTab) {
+                // We asked, and someone replied. We shouldn't be here.
+                isPrimaryTab = false;
+                document.getElementById('singleTabOverlay').classList.remove('hidden');
+                channel.close(); // Stop listening
+            }
+        };
+
+        // When tab loads, check if others exist
+        channel.postMessage('ping');
+
+        // --- Initialization ---
+        async function init() {
+            if (!isPrimaryTab) return;
+
+            setupUI();
+            
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Auth flow
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                currentUser = auth.currentUser;
+                
+                if (!displayName) {
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                } else {
+                    updateProfileUI();
+                    startMessageSync();
+                }
+
+            } catch (error) {
+                console.error("Firebase Init Error:", error);
+                showModal("Connection Error", "Could not connect to the chat server. Please refresh.");
+            }
+        }
+
+        // --- UI Setup & Event Listeners ---
+        function setupUI() {
+            // Login Form
+            document.getElementById('loginForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('displayNameInput').value.trim();
+                if (name) {
+                    displayName = name;
+                    localStorage.setItem('nexus_displayName', displayName);
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    updateProfileUI();
+                    startMessageSync();
+                }
+            });
+
+            // Message Form
+            document.getElementById('messageForm').addEventListener('submit', handleSendMessage);
+
+            // File Input
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+            // Emoji Picker
+            const picker = document.getElementById('emojiPicker');
+            emojis.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'text-xl hover:bg-slate-100 rounded p-1 transition-colors';
+                btn.textContent = emoji;
+                btn.onclick = () => {
+                    const input = document.getElementById('messageInput');
+                    input.value += emoji;
+                    input.focus();
+                };
+                picker.appendChild(btn);
+            });
+
+            document.getElementById('emojiBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                picker.classList.toggle('active');
+            });
+
+            // Close emoji picker when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!picker.contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+                    picker.classList.remove('active');
+                }
+            });
+
+            // Update last read on window unload
+            window.addEventListener('beforeunload', () => {
+                localStorage.setItem('nexus_lastRead', Date.now().toString());
+            });
+            // Update last read continuously if tab is active
+            setInterval(() => {
+                if(document.visibilityState === 'visible') {
+                   localStorage.setItem('nexus_lastRead', Date.now().toString());
+                }
+            }, 5000);
+        }
+
+        function updateProfileUI() {
+            document.getElementById('myNameDisplay').textContent = displayName;
+            document.getElementById('myAvatar').textContent = displayName.charAt(0).toUpperCase();
+            document.getElementById('myAvatar').className = 'w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold';
+        }
+
+        window.changeName = () => {
+            document.getElementById('displayNameInput').value = displayName;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+        };
+
+        // --- Data Sync (Firestore) ---
+        function startMessageSync() {
+            if (!currentUser) return;
+            
+            // Note: Adhering to prompt constraints: No complex queries (no orderBy, limit). 
+            // We fetch the collection and sort in memory.
+            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+            
+            onSnapshot(messagesRef, (snapshot) => {
+                document.getElementById('loadingMessages').style.display = 'none';
+                
+                const messages = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Handle serverTimestamp (which might be null locally before sync)
+                    const time = data.timestamp ? data.timestamp.toMillis() : Date.now();
+                    messages.push({ id: doc.id, ...data, time });
+                });
+
+                // Sort by time ascending
+                messages.sort((a, b) => a.time - b.time);
+                
+                renderMessages(messages);
+                checkNotifications(messages);
+                
+                document.getElementById('messageCount').textContent = `${messages.length} msgs`;
+                
+                // Scroll to bottom
+                const container = document.getElementById('messagesContainer');
+                container.scrollTop = container.scrollHeight;
+
+            }, (error) => {
+                console.error("Sync error:", error);
+                showModal("Sync Error", "Lost connection to messages.");
+            });
+        }
+
+        // --- Notifications ---
+        function checkNotifications(messages) {
+            if (!lastReadTime) return; // First time load
+
+            // Count messages newer than lastReadTime NOT from current user
+            const missed = messages.filter(m => m.time > lastReadTime && m.senderId !== currentUser.uid);
+            
+            if (missed.length > 0) {
+                const toast = document.getElementById('notificationToast');
+                document.getElementById('notificationText').textContent = `${missed.length} new message${missed.length > 1 ? 's' : ''} while you were away!`;
+                
+                toast.classList.remove('opacity-0', '-translate-y-4');
+                toast.classList.add('opacity-100', 'translate-y-0');
+                
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                    toast.classList.add('opacity-0', '-translate-y-4');
+                }, 5000);
+            }
+            
+            // Update last read time now that we've checked
+            if(document.visibilityState === 'visible') {
+                lastReadTime = Date.now();
+                localStorage.setItem('nexus_lastRead', lastReadTime.toString());
+            }
+        }
+
+        // --- File Handling ---
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > MAX_FILE_SIZE) {
+                showModal("File Too Large", `Files must be smaller than ${Math.round(MAX_FILE_SIZE/1024)}KB.`);
+                e.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                activeFile = {
+                    name: file.name,
+                    type: file.type.startsWith('image/') ? 'image' : 'file',
+                    mime: file.type
+                };
+                activeFileDataUrl = event.target.result;
+                
+                // Show preview
+                document.getElementById('filePreviewContainer').classList.remove('hidden');
+                document.getElementById('filePreviewName').textContent = file.name;
+                
+                const iconContainer = document.getElementById('filePreviewIcon');
+                if (activeFile.type === 'image') {
+                    iconContainer.innerHTML = `<img src="${activeFileDataUrl}" class="w-full h-full object-cover rounded">`;
+                } else {
+                    iconContainer.innerHTML = `<i class="fas fa-file-alt"></i>`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.clearFile = () => {
+            activeFile = null;
+            activeFileDataUrl = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreviewContainer').classList.add('hidden');
+        };
+
+        // --- Sending Messages ---
+        async function handleSendMessage(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text && !activeFile) return;
+
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+
+            try {
+                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+                
+                const messageData = {
+                    text: text,
+                    sender: displayName,
+                    senderId: currentUser.uid,
+                    timestamp: serverTimestamp(),
+                    hasAttachment: !!activeFile
+                };
+
+                if (activeFile) {
+                    messageData.attachment = {
+                        name: activeFile.name,
+                        type: activeFile.type,
+                        data: activeFileDataUrl
+                    };
+                }
+
+                await addDoc(messagesRef, messageData);
+                
+                input.value = '';
+                clearFile();
+                
+            } catch (error) {
+                console.error("Error sending message:", error);
+                showModal("Error", "Failed to send message. Please try again.");
+            } finally {
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        // --- Rendering ---
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400">
+                        <i class="far fa-comments text-4xl mb-3"></i>
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            let lastDateStr = '';
+
+            messages.forEach(msg => {
+                const isMine = msg.senderId === currentUser.uid;
+                const msgTime = new Date(msg.time);
+                
+                // Date Separator logic
+                const dateStr = msgTime.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+                if (dateStr !== lastDateStr) {
+                    const divider = document.createElement('div');
+                    divider.className = 'flex justify-center my-4';
+                    divider.innerHTML = `<span class="bg-slate-200 text-slate-500 text-xs px-3 py-1 rounded-full font-medium">${dateStr}</span>`;
+                    container.appendChild(divider);
+                    lastDateStr = dateStr;
+                }
+
+                const timeStr = msgTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const bubble = document.createElement('div');
+                bubble.className = `flex w-full mb-4 ${isMine ? 'justify-end' : 'justify-start'}`;
+
+                let attachmentHtml = '';
+                if (msg.hasAttachment && msg.attachment) {
+                    if (msg.attachment.type === 'image') {
+                        attachmentHtml = `
+                            <div class="mt-2 mb-1 rounded-lg overflow-hidden border border-black/10">
+                                <img src="${msg.attachment.data}" alt="attachment" class="max-w-full h-auto max-h-48 object-contain">
+                            </div>
+                        `;
+                    } else {
+                        attachmentHtml = `
+                            <a href="${msg.attachment.data}" download="${msg.attachment.name}" class="mt-2 mb-1 flex items-center gap-2 bg-black/5 p-2 rounded-lg hover:bg-black/10 transition-colors">
+                                <i class="fas fa-file-download text-xl opacity-70"></i>
+                                <span class="text-sm font-medium truncate max-w-[150px]">${msg.attachment.name}</span>
+                            </a>
+                        `;
+                    }
+                }
+
+                bubble.innerHTML = `
+                    <div class="flex flex-col max-w-[75%] ${isMine ? 'items-end' : 'items-start'}">
+                        ${!isMine ? `<span class="text-xs text-slate-500 ml-1 mb-1 font-medium">${msg.sender}</span>` : ''}
+                        <div class="px-4 py-2.5 rounded-2xl ${isMine ? 'bg-blue-500 text-white rounded-tr-none shadow-blue-500/20 shadow-md' : 'bg-white text-slate-800 rounded-tl-none shadow-sm border border-slate-100'} relative group">
+                            ${msg.text ? `<p class="break-words leading-relaxed">${msg.text}</p>` : ''}
+                            ${attachmentHtml}
+                            <span class="text-[10px] opacity-70 mt-1 block ${isMine ? 'text-right text-blue-100' : 'text-right text-slate-400'}">${timeStr}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(bubble);
+            });
+        }
+
+        // --- Custom Modal Helpers ---
+        window.showModal = (title, message) => {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            const modal = document.getElementById('customModal');
+            const content = document.getElementById('customModalContent');
+            
+            modal.classList.remove('hidden');
+            // Trigger reflow
+            void modal.offsetWidth;
+            
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        };
+
+        window.closeModal = () => {
+            const modal = document.getElementById('customModal');
+            const content = document.getElementById('customModalContent');
+            
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
+
+        // Start App
+        window.addEventListener('load', init);
+
+    </script>
+</body>
+</html>
