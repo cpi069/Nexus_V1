@@ -117,7 +117,7 @@
                     </div>
                     <div class="space-y-1">
                         <!-- Permanent Global Room -->
-                        <button onclick="switchRoom('public')" id="roomBtn-public" class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left">
+                        <button onclick="switchRoom('public')" id="roomBtn-public" class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left group">
                             <div class="flex items-center gap-2"><i class="fas fa-globe text-blue-500 w-4 text-center"></i>Global Room</div>
                         </button>
                         <!-- Dynamic Rooms Container -->
@@ -175,7 +175,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Configuration
         const firebaseConfig = {
@@ -193,7 +193,7 @@
         let unsubscribeSync = null;
         let unsubscribeRooms = null;
         let displayName = localStorage.getItem('nexus_displayName') || '';
-        let lastReadTime = parseInt(localStorage.getItem('nexus_lastRead') || '0', 10);
+        let lastReadTime = parseInt(localStorage.getItem('nexus_lastRead') || Date.now().toString(), 10);
         let activeFile = null;
         let activeFileDataUrl = null;
         const MAX_FILE_SIZE = 500 * 1024;
@@ -250,34 +250,92 @@
                 listEl.innerHTML = '';
                 dynamicRooms = {};
                 let roomsArray = [];
+                let hasNewActivity = false;
                 
-                snapshot.forEach(doc => {
-                    roomsArray.push({ id: doc.id, ...doc.data() });
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    roomsArray.push({ id: docSnap.id, ...data });
+                    
+                    // Check for general room notifications
+                    if (data.lastMessageTime && data.lastMessageSenderId !== currentUser.uid) {
+                        const msgTimeMillis = data.lastMessageTime.toMillis();
+                        if (msgTimeMillis > lastReadTime && docSnap.id !== currentRoomId) {
+                            hasNewActivity = true;
+                        }
+                    }
                 });
                 
+                if (hasNewActivity) {
+                    triggerGlobalNotification("New message in another room!");
+                }
+
                 roomsArray.sort((a, b) => a.name.localeCompare(b.name));
                 
                 roomsArray.forEach(room => {
                     dynamicRooms[room.id] = room;
                     const btn = document.createElement('button');
-                    btn.onclick = () => switchRoom(room.id);
                     btn.id = `roomBtn-${room.id}`;
                     const isSelected = room.id === currentRoomId;
                     
                     btn.className = isSelected 
-                        ? "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left"
-                        : "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 font-medium transition-colors text-left";
+                        ? "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left group"
+                        : "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 font-medium transition-colors text-left group";
                     
                     const iconColor = isSelected ? 'text-blue-500' : 'text-slate-400';
                     
+                    // Add delete button if user is creator
+                    const deleteBtnHtml = room.creatorId === currentUser.uid 
+                        ? `<span onclick="deleteRoom('${room.id}', event)" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1" title="Delete Room"><i class="fas fa-trash-alt"></i></span>` 
+                        : '';
+
                     btn.innerHTML = `
-                        <div class="flex items-center gap-2 overflow-hidden">
+                        <div class="flex items-center gap-2 overflow-hidden w-full" onclick="switchRoom('${room.id}')">
                             <i class="fas ${room.isPrivate ? 'fa-lock' : 'fa-hashtag'} ${iconColor} w-4 text-center flex-shrink-0"></i>
-                            <span class="truncate">${room.name}</span>
-                        </div>`;
+                            <span class="truncate flex-1">${room.name}</span>
+                        </div>
+                        ${deleteBtnHtml}`;
                     listEl.appendChild(btn);
                 });
             });
+        }
+
+        window.deleteRoom = async (roomId, event) => {
+            event.stopPropagation();
+            if (!confirm("Are you sure you want to delete this room? This action cannot be undone.")) return;
+            
+            try {
+                await deleteDoc(doc(db, 'artifacts', chatAppId, 'rooms', roomId));
+                if (currentRoomId === roomId) {
+                    switchRoom('public');
+                }
+            } catch (error) {
+                console.error("Error deleting room:", error);
+                showModal("Error", "Could not delete the room.");
+            }
+        };
+
+        function triggerGlobalNotification(messageText) {
+            const toast = document.getElementById('notificationToast');
+            document.getElementById('notificationText').textContent = messageText;
+            toast.classList.remove('opacity-0', '-translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-4');
+            }, 4000);
+
+            if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
+                new Notification("Nexus Chat", {
+                    body: messageText,
+                    icon: 'favicon-32x32.png'
+                });
+            }
+            
+            if(document.visibilityState === 'visible') {
+                lastReadTime = Date.now();
+                localStorage.setItem('nexus_lastRead', lastReadTime.toString());
+            }
         }
 
         document.getElementById('isPrivateCheckbox').addEventListener('change', (e) => {
@@ -380,8 +438,8 @@
             const input = document.getElementById('roomPasswordInput').value;
             const roomData = dynamicRooms[pendingRoomId];
             if (pendingRoomId && roomData && input === roomData.password) {
-                proceedToRoom(pendingRoomId, roomData.name); // FIXED: Join the room first
-                closePasswordModal(); // FIXED: Erase the pending ID second
+                proceedToRoom(pendingRoomId, roomData.name);
+                closePasswordModal(); 
             } else {
                 document.getElementById('passwordError').classList.remove('hidden');
             }
@@ -396,7 +454,7 @@
             currentRoomName = roomName;
             
             document.querySelectorAll('[id^="roomBtn-"]').forEach(btn => {
-                btn.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 font-medium transition-colors text-left";
+                btn.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 font-medium transition-colors text-left group";
                 const icon = btn.querySelector('i');
                 if (icon) {
                     if (icon.classList.contains('fa-globe')) icon.className = "fas fa-globe text-slate-400 w-4 text-center";
@@ -407,11 +465,12 @@
             
             const activeBtn = document.getElementById(`roomBtn-${roomId}`);
             if (activeBtn) {
-                activeBtn.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left";
+                activeBtn.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left group";
                 const icon = activeBtn.querySelector('i');
                 if (icon) {
                     if (icon.classList.contains('fa-globe')) icon.className = "fas fa-globe text-blue-500 w-4 text-center";
                     else if (icon.classList.contains('fa-hashtag')) icon.className = "fas fa-hashtag text-blue-500 w-4 text-center flex-shrink-0";
+                    else if (icon.classList.contains('fa-lock')) icon.className = "fas fa-lock text-blue-500 w-4 text-center flex-shrink-0";
                 }
             }
             
@@ -423,7 +482,6 @@
         }
 
         function setupUI() {
-            // Ask for Native Notification Permissions on load
             if ("Notification" in window && Notification.permission === "default") {
                 Notification.requestPermission();
             }
@@ -479,11 +537,6 @@
             document.getElementById('myAvatar').textContent = displayName.charAt(0).toUpperCase();
         }
 
-        window.changeName = () => {
-            document.getElementById('displayNameInput').value = displayName;
-            document.getElementById('loginOverlay').classList.remove('hidden');
-        };
-
         function startMessageSync() {
             if (!currentUser) return;
             const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
@@ -500,7 +553,12 @@
                 
                 messages.sort((a, b) => a.time - b.time);
                 renderMessages(messages);
-                checkNotifications(messages);
+                
+                // Check local room notifications
+                const missed = messages.filter(m => m.time > lastReadTime && m.senderId !== currentUser.uid);
+                if (missed.length > 0) {
+                    triggerGlobalNotification(`${missed.length} new message${missed.length > 1 ? 's' : ''} in ${currentRoomName}`);
+                }
                 
                 document.getElementById('messageCount').textContent = `${messages.length} msgs`;
                 const container = document.getElementById('messagesContainer');
@@ -508,36 +566,6 @@
             }, (error) => {
                 console.error("Sync error:", error);
             });
-        }
-
-        function checkNotifications(messages) {
-            const missed = messages.filter(m => m.time > lastReadTime && m.senderId !== currentUser.uid);
-            
-            if (missed.length > 0) {
-                // Trigger Visual Toast
-                const toast = document.getElementById('notificationToast');
-                document.getElementById('notificationText').textContent = `${missed.length} new message${missed.length > 1 ? 's' : ''}`;
-                toast.classList.remove('opacity-0', '-translate-y-4');
-                toast.classList.add('opacity-100', 'translate-y-0');
-                
-                setTimeout(() => {
-                    toast.classList.remove('opacity-100', 'translate-y-0');
-                    toast.classList.add('opacity-0', '-translate-y-4');
-                }, 4000);
-
-                // Trigger Native System Notification (if permission is granted and tab is hidden)
-                if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
-                    new Notification("Nexus Chat", {
-                        body: `${missed.length} new message${missed.length > 1 ? 's' : ''}`,
-                        icon: 'favicon-32x32.png'
-                    });
-                }
-            }
-            
-            if(document.visibilityState === 'visible') {
-                lastReadTime = Date.now();
-                localStorage.setItem('nexus_lastRead', lastReadTime.toString());
-            }
         }
 
         function handleFileSelect(e) {
@@ -586,7 +614,6 @@
             sendBtn.disabled = true;
             
             try {
-                const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
                 const messageData = {
                     text: text,
                     sender: displayName,
@@ -599,7 +626,19 @@
                     messageData.attachment = { name: activeFile.name, type: activeFile.type, data: activeFileDataUrl };
                 }
                 
+                // 1. Send the actual message
+                const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
                 await addDoc(messagesRef, messageData);
+                
+                // 2. Update the parent room to trigger global notifications (except for Global Room)
+                if (currentRoomId !== 'public') {
+                    const roomRef = doc(db, 'artifacts', chatAppId, 'rooms', currentRoomId);
+                    await updateDoc(roomRef, { 
+                        lastMessageTime: serverTimestamp(),
+                        lastMessageSenderId: currentUser.uid
+                    });
+                }
+
                 input.value = '';
                 clearFile();
             } catch (error) {
