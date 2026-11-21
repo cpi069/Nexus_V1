@@ -173,9 +173,10 @@
     </div>
 
     <script type="module">
+        // Added query and orderBy to imports to correctly sequence events
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Configuration
         const firebaseConfig = {
@@ -253,12 +254,15 @@
                 let hasNewActivity = false;
                 
                 snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
+                    // Added { serverTimestamps: 'estimate' } to prevent crashes on pending updates
+                    const data = docSnap.data({ serverTimestamps: 'estimate' });
                     roomsArray.push({ id: docSnap.id, ...data });
                     
-                    // Check for general room notifications
                     if (data.lastMessageTime && data.lastMessageSenderId !== currentUser.uid) {
-                        const msgTimeMillis = data.lastMessageTime.toMillis();
+                        const msgTimeMillis = typeof data.lastMessageTime.toMillis === 'function' 
+                            ? data.lastMessageTime.toMillis() 
+                            : Date.now();
+                            
                         if (msgTimeMillis > lastReadTime && docSnap.id !== currentRoomId) {
                             hasNewActivity = true;
                         }
@@ -283,7 +287,6 @@
                     
                     const iconColor = isSelected ? 'text-blue-500' : 'text-slate-400';
                     
-                    // Add delete button if user is creator
                     const deleteBtnHtml = room.creatorId === currentUser.uid 
                         ? `<span onclick="deleteRoom('${room.id}', event)" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1" title="Delete Room"><i class="fas fa-trash-alt"></i></span>` 
                         : '';
@@ -541,20 +544,27 @@
             if (!currentUser) return;
             const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
             
-            unsubscribeSync = onSnapshot(messagesRef, (snapshot) => {
+            // Added query and orderBy to enforce chronological fetching and stable listeners
+            const q = query(messagesRef, orderBy('timestamp', 'asc'));
+            
+            unsubscribeSync = onSnapshot(q, (snapshot) => {
                 document.getElementById('loadingMessages').style.display = 'none';
                 const messages = [];
                 
                 snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const time = data.timestamp ? data.timestamp.toMillis() : Date.now();
+                    // Added { serverTimestamps: 'estimate' } to safely handle pending local writes
+                    const data = doc.data({ serverTimestamps: 'estimate' });
+                    
+                    const time = data.timestamp && typeof data.timestamp.toMillis === 'function' 
+                        ? data.timestamp.toMillis() 
+                        : Date.now();
+                        
                     messages.push({ id: doc.id, ...data, time });
                 });
                 
                 messages.sort((a, b) => a.time - b.time);
                 renderMessages(messages);
                 
-                // Check local room notifications
                 const missed = messages.filter(m => m.time > lastReadTime && m.senderId !== currentUser.uid);
                 if (missed.length > 0) {
                     triggerGlobalNotification(`${missed.length} new message${missed.length > 1 ? 's' : ''} in ${currentRoomName}`);
@@ -626,11 +636,9 @@
                     messageData.attachment = { name: activeFile.name, type: activeFile.type, data: activeFileDataUrl };
                 }
                 
-                // 1. Send the actual message
                 const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
                 await addDoc(messagesRef, messageData);
                 
-                // 2. Update the parent room to trigger global notifications (except for Global Room)
                 if (currentRoomId !== 'public') {
                     const roomRef = doc(db, 'artifacts', chatAppId, 'rooms', currentRoomId);
                     await updateDoc(roomRef, { 
