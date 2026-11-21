@@ -418,7 +418,7 @@
             document.getElementById('currentRoomTitle').textContent = roomName;
             
             if (unsubscribeSync) unsubscribeSync();
-            document.getElementById('messagesContainer').innerHTML = '<div class="flex items-center justify-center h-full text-slate-400"><i class="fas fa-circle-notch fa-spin text-2xl"></i></div>';
+            document.getElementById('messagesContainer').innerHTML = '<div class="flex items-center justify-center h-full text-slate-400" id="loadingMessages"><i class="fas fa-circle-notch fa-spin text-2xl"></i></div>';
             startMessageSync();
         }
 
