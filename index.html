@@ -37,7 +37,7 @@
     <div id="loginOverlay" class="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
             <div class="text-center mb-6">
-                <div class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg flex items-center justify-center bg-blue-500 text-white text-3xl"><i class="fas fa-bolt"></i></div>
+                <img src="nexus-logo.png" alt="Nexus Logo" class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg object-cover bg-blue-500">
                 <h2 class="text-2xl font-bold text-slate-800">Welcome to Nexus</h2>
                 <p class="text-slate-500 mt-1">Enter your display name to join the chat.</p>
             </div>
@@ -102,7 +102,7 @@
         <div class="w-full sm:w-72 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0">
             <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl shadow-sm bg-blue-500 text-white flex items-center justify-center text-xl"><i class="fas fa-bolt"></i></div>
+                    <img src="nexus-logo.png" alt="Nexus Logo" class="w-10 h-10 rounded-xl shadow-sm object-cover bg-blue-500">
                     <div>
                         <h1 class="font-bold text-slate-800">Nexus Chat</h1>
                         <p class="text-xs text-green-500 font-medium flex items-center gap-1">Online <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span></p>
@@ -380,8 +380,8 @@
             const input = document.getElementById('roomPasswordInput').value;
             const roomData = dynamicRooms[pendingRoomId];
             if (pendingRoomId && roomData && input === roomData.password) {
-                closePasswordModal();
-                proceedToRoom(pendingRoomId, roomData.name);
+                proceedToRoom(pendingRoomId, roomData.name); // FIXED: Join the room first
+                closePasswordModal(); // FIXED: Erase the pending ID second
             } else {
                 document.getElementById('passwordError').classList.remove('hidden');
             }
@@ -423,6 +423,11 @@
         }
 
         function setupUI() {
+            // Ask for Native Notification Permissions on load
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+
             document.getElementById('loginForm').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const name = document.getElementById('displayNameInput').value.trim();
@@ -506,10 +511,10 @@
         }
 
         function checkNotifications(messages) {
-            if (!lastReadTime) return;
             const missed = messages.filter(m => m.time > lastReadTime && m.senderId !== currentUser.uid);
             
             if (missed.length > 0) {
+                // Trigger Visual Toast
                 const toast = document.getElementById('notificationToast');
                 document.getElementById('notificationText').textContent = `${missed.length} new message${missed.length > 1 ? 's' : ''}`;
                 toast.classList.remove('opacity-0', '-translate-y-4');
@@ -519,6 +524,14 @@
                     toast.classList.remove('opacity-100', 'translate-y-0');
                     toast.classList.add('opacity-0', '-translate-y-4');
                 }, 4000);
+
+                // Trigger Native System Notification (if permission is granted and tab is hidden)
+                if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
+                    new Notification("Nexus Chat", {
+                        body: `${missed.length} new message${missed.length > 1 ? 's' : ''}`,
+                        icon: 'favicon-32x32.png'
+                    });
+                }
             }
             
             if(document.visibilityState === 'visible') {
