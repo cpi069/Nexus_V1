@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus V1</title>
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -170,7 +177,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Configuration (Capitalization Fixed)
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AlzaSyDj-okwuRWzIY3Felcl4Fs3fRuAGDRpbWM",
             authDomain: "nexus-v1-134d7.firebaseapp.com",
@@ -233,7 +240,6 @@
             }
         }
 
-        // Room Creation & Syncing (Paths Fixed)
         function startRoomsSync() {
             if (!currentUser) return;
             const roomsRef = collection(db, 'artifacts', chatAppId, 'rooms');
@@ -472,7 +478,6 @@
             document.getElementById('loginOverlay').classList.remove('hidden');
         };
 
-        // Message Syncing (Paths Fixed)
         function startMessageSync() {
             if (!currentUser) return;
             const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
