@@ -7,61 +7,30 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        .emoji-picker {
-            display: none;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
-        }
-        .emoji-picker.active {
-            display: grid;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
+        @import url('https://fonts.googleapis.com/css?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .emoji-picker { display: none; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+        .emoji-picker.active { display: grid; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="manifest" href="site.webmanifest">
 </head>
 <body class="h-screen w-full flex items-center justify-center overflow-hidden text-slate-800">
-
     <!-- Single Tab Enforcement Overlay -->
     <div id="singleTabOverlay" class="fixed inset-0 z-50 bg-slate-900 text-white flex flex-col items-center justify-center hidden">
         <i class="fas fa-exclamation-triangle text-6xl text-yellow-400 mb-4"></i>
         <h1 class="text-3xl font-bold mb-2">Tab Already Open</h1>
-        <p class="text-slate-300 max-w-md text-center">
-            Nexus Chat is already open in another tab on this device. Please close this tab or use the active one to continue messaging.
-        </p>
+        <p class="text-slate-300 max-w-md text-center">Nexus Chat is already open in another tab on this device. Please close this tab or use the active one to continue messaging.</p>
     </div>
 
     <!-- Login / Setup Overlay -->
     <div id="loginOverlay" class="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
             <div class="text-center mb-6">
-                <!-- Uses renamed image to avoid space issues -->
-                <img src="nexus-logo.png" alt="Nexus Logo" class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg object-cover bg-blue-500">
+                <div class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg flex items-center justify-center bg-blue-500 text-white text-3xl"><i class="fas fa-bolt"></i></div>
                 <h2 class="text-2xl font-bold text-slate-800">Welcome to Nexus</h2>
                 <p class="text-slate-500 mt-1">Enter your display name to join the chat.</p>
             </div>
@@ -69,9 +38,7 @@
                 <div>
                     <input type="text" id="displayNameInput" placeholder="Your Name" required maxlength="20" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
                 </div>
-                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl transition-all shadow-md active:scale-[0.98]">
-                    Join Chat
-                </button>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl transition-all shadow-md active:scale-[0.98]">Join Chat</button>
             </form>
         </div>
     </div>
@@ -93,16 +60,13 @@
             <h3 class="text-lg font-bold text-slate-800 mb-4"><i class="fas fa-plus-circle text-blue-500 mr-2"></i>Create New Room</h3>
             <form id="createRoomForm">
                 <input type="text" id="newRoomNameInput" placeholder="Room Name" required maxlength="25" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 bg-slate-50">
-                
                 <label class="flex items-center gap-2 mb-4 cursor-pointer text-slate-700 font-medium">
                     <input type="checkbox" id="isPrivateCheckbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
                     Make Room Private
                 </label>
-                
                 <div id="newRoomPasswordContainer" class="hidden">
                     <input type="text" id="newRoomPasswordInput" placeholder="Set a Password" maxlength="20" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 bg-slate-50">
                 </div>
-
                 <div class="flex justify-end gap-2">
                     <button type="button" onclick="closeCreateRoomModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors">Cancel</button>
                     <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">Create</button>
@@ -127,46 +91,32 @@
 
     <!-- Main App Container -->
     <div class="w-full h-full max-w-6xl mx-auto flex flex-col sm:flex-row bg-white sm:rounded-2xl sm:shadow-2xl sm:h-[95vh] overflow-hidden relative">
-        
         <!-- Sidebar -->
         <div class="w-full sm:w-72 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0">
             <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <img src="nexus-logo.png" alt="Nexus Logo" class="w-10 h-10 rounded-xl shadow-sm object-cover bg-blue-500">
+                    <div class="w-10 h-10 rounded-xl shadow-sm bg-blue-500 text-white flex items-center justify-center text-xl"><i class="fas fa-bolt"></i></div>
                     <div>
                         <h1 class="font-bold text-slate-800">Nexus Chat</h1>
-                        <p class="text-xs text-green-500 font-medium flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online
-                        </p>
+                        <p class="text-xs text-green-500 font-medium flex items-center gap-1">Online <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span></p>
                     </div>
                 </div>
             </div>
-            
             <div class="flex-1 overflow-y-auto flex flex-col">
                 <div class="p-4 flex-1">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Rooms</h3>
-                        <button onclick="openCreateRoomModal()" class="text-slate-400 hover:text-blue-500 transition-colors p-1" title="Create Room">
-                            <i class="fas fa-plus"></i>
-                        </button>
+                        <button onclick="openCreateRoomModal()" class="text-slate-400 hover:text-blue-500 transition-colors p-1" title="Create Room"><i class="fas fa-plus"></i></button>
                     </div>
-                    
                     <div class="space-y-1">
                         <!-- Permanent Global Room -->
                         <button onclick="switchRoom('public')" id="roomBtn-public" class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-globe text-blue-500 w-4 text-center"></i>
-                                Global Room
-                            </div>
+                            <div class="flex items-center gap-2"><i class="fas fa-globe text-blue-500 w-4 text-center"></i>Global Room</div>
                         </button>
-                        
                         <!-- Dynamic Rooms Container -->
-                        <div id="dynamicRoomList" class="space-y-1 pt-1">
-                            <!-- Populated by Firebase -->
-                        </div>
+                        <div id="dynamicRoomList" class="space-y-1 pt-1"></div>
                     </div>
                 </div>
-                
                 <!-- Profile Section -->
                 <div class="p-4 border-t border-slate-200 bg-white">
                     <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">My Profile</h3>
@@ -189,43 +139,27 @@
                     <span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded-md font-medium" id="messageCount">0 msgs</span>
                 </div>
                 <div id="notificationToast" class="absolute top-4 right-1/2 transform translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 opacity-0 -translate-y-4 pointer-events-none">
-                    <i class="fas fa-bell"></i>
-                    <span id="notificationText">0 new messages</span>
+                    <i class="fas fa-bell"></i><span id="notificationText">0 new messages</span>
                 </div>
             </div>
-
             <div id="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
-                <div class="flex items-center justify-center h-full text-slate-400" id="loadingMessages">
-                    <i class="fas fa-circle-notch fa-spin text-2xl"></i>
-                </div>
+                <div class="flex items-center justify-center h-full text-slate-400" id="loadingMessages"><i class="fas fa-circle-notch fa-spin text-2xl"></i></div>
             </div>
-
             <div class="p-4 bg-white border-t border-slate-200 relative">
                 <div id="emojiPicker" class="emoji-picker absolute bottom-20 left-4 bg-white border border-slate-200 shadow-xl rounded-xl p-3 z-20 w-64 max-h-48 overflow-y-auto"></div>
-
                 <div id="filePreviewContainer" class="hidden absolute bottom-20 left-4 bg-white border border-slate-200 shadow-lg rounded-xl p-2 z-10 flex items-center gap-3">
                     <div id="filePreviewIcon" class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-slate-500 overflow-hidden"></div>
                     <div class="flex-1 truncate w-32 text-sm text-slate-700 font-medium" id="filePreviewName">file.jpg</div>
                     <button onclick="clearFile()" class="text-red-500 hover:bg-red-50 p-1 rounded transition-colors"><i class="fas fa-times"></i></button>
                 </div>
-
                 <form id="messageForm" class="flex items-end gap-2">
-                    <button type="button" id="emojiBtn" class="p-3 text-slate-400 hover:text-blue-500 transition-colors flex-shrink-0">
-                        <i class="far fa-smile text-xl"></i>
-                    </button>
-                    
+                    <button type="button" id="emojiBtn" class="p-3 text-slate-400 hover:text-blue-500 transition-colors flex-shrink-0"><i class="far fa-smile text-xl"></i></button>
                     <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.txt,.doc,.docx">
-                    <button type="button" onclick="document.getElementById('fileInput').click()" class="p-3 text-slate-400 hover:text-blue-500 transition-colors flex-shrink-0">
-                        <i class="fas fa-paperclip text-xl"></i>
-                    </button>
-
+                    <button type="button" onclick="document.getElementById('fileInput').click()" class="p-3 text-slate-400 hover:text-blue-500 transition-colors flex-shrink-0"><i class="fas fa-paperclip text-xl"></i></button>
                     <div class="flex-1 bg-slate-100 rounded-2xl relative flex items-center border border-transparent focus-within:border-blue-300 focus-within:bg-white transition-all shadow-sm">
                         <input type="text" id="messageInput" autocomplete="off" placeholder="Type a message..." class="w-full bg-transparent px-4 py-3 rounded-2xl focus:outline-none text-slate-800">
                     </div>
-
-                    <button type="submit" id="sendBtn" class="bg-blue-500 hover:bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 transition-transform active:scale-95 disabled:opacity-50 flex-shrink-0">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                    <button type="submit" id="sendBtn" class="bg-blue-500 hover:bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 transition-transform active:scale-95 disabled:opacity-50 flex-shrink-0"><i class="fas fa-paper-plane"></i></button>
                 </form>
             </div>
         </div>
@@ -236,42 +170,36 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ==========================================
-        // PASTE YOUR FIREBASE CONFIGURATION HERE
-        // ==========================================
+        // Firebase Configuration (Capitalization Fixed)
         const firebaseConfig = {
-            apiKey: "AIzaSyDj-okwuRWzlY3Felcl4Fs3fRuAGDRpbWM",
+            apiKey: "AlzaSyDj-okwuRWzIY3Felcl4Fs3fRuAGDRpbWM",
             authDomain: "nexus-v1-134d7.firebaseapp.com",
             projectId: "nexus-v1-134d7",
             storageBucket: "nexus-v1-134d7.firebasestorage.app",
             messagingSenderId: "779838777870",
             appId: "1:779838777870:web:03d550d872ba32a636aa5f"
         };
-        // ==========================================
-
-        const appId = 'nexus-chat-v1'; 
+        
+        const chatAppId = 'nexus-chat-v1';
         let app, db, auth, currentUser;
         let unsubscribeSync = null;
         let unsubscribeRooms = null;
-        
         let displayName = localStorage.getItem('nexus_displayName') || '';
         let lastReadTime = parseInt(localStorage.getItem('nexus_lastRead') || '0', 10);
         let activeFile = null;
         let activeFileDataUrl = null;
-        const MAX_FILE_SIZE = 500 * 1024; 
-
+        const MAX_FILE_SIZE = 500 * 1024;
+        
         // Room State
         let currentRoomId = 'public';
         let currentRoomName = 'Global Room';
         let pendingRoomId = null;
-        let dynamicRooms = {}; 
-
-        const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾'];
-
-        // --- Single Tab Enforcement ---
+        let dynamicRooms = {};
+        const emojis = ['😀','😂','🥰','😎','🤔','🙌','👍','🔥','❤️','🎉','✨','👀','😭','💀','💯'];
+        
+        // Single Tab Enforcement
         const channel = new BroadcastChannel('nexus_chat_channel');
         let isPrimaryTab = true;
-
         channel.onmessage = (event) => {
             if (event.data === 'ping') channel.postMessage('pong');
             if (event.data === 'pong' && isPrimaryTab) {
@@ -282,16 +210,13 @@
         };
         channel.postMessage('ping');
 
-        // --- Initialization ---
         async function init() {
             if (!isPrimaryTab) return;
             setupUI();
-            
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-
                 await signInAnonymously(auth);
                 currentUser = auth.currentUser;
                 
@@ -304,52 +229,45 @@
                 }
             } catch (error) {
                 console.error("Firebase Init Error:", error);
-                if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-                    showModal("Configuration Missing", "Please add your Firebase config to the code.");
-                } else {
-                    showModal("Connection Error", "Could not connect to the database. Please check your config.");
-                }
+                showModal("Connection Error", "Could not connect to the database. Check console for details.");
             }
         }
 
-        // --- Room Creation & Syncing ---
+        // Room Creation & Syncing (Paths Fixed)
         function startRoomsSync() {
             if (!currentUser) return;
-            const roomsRef = collection(db, 'artifacts', appId, 'metadata', 'rooms');
+            const roomsRef = collection(db, 'artifacts', chatAppId, 'rooms');
             
             unsubscribeRooms = onSnapshot(roomsRef, (snapshot) => {
                 const listEl = document.getElementById('dynamicRoomList');
                 listEl.innerHTML = '';
                 dynamicRooms = {};
-
                 let roomsArray = [];
+                
                 snapshot.forEach(doc => {
                     roomsArray.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Sort alphabetically by name
                 roomsArray.sort((a, b) => a.name.localeCompare(b.name));
-
+                
                 roomsArray.forEach(room => {
                     dynamicRooms[room.id] = room;
                     const btn = document.createElement('button');
                     btn.onclick = () => switchRoom(room.id);
                     btn.id = `roomBtn-${room.id}`;
-                    
                     const isSelected = room.id === currentRoomId;
-                    btn.className = isSelected ? 
-                        "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left" : 
-                        "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 font-medium transition-colors text-left";
                     
-                    const icon = room.isPrivate ? 'fa-lock text-slate-400' : 'fa-hashtag text-blue-400';
-                    const iconColor = isSelected ? 'text-blue-500' : (room.isPrivate ? 'text-slate-400' : 'text-slate-400');
-
+                    btn.className = isSelected 
+                        ? "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium transition-colors text-left"
+                        : "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 font-medium transition-colors text-left";
+                    
+                    const iconColor = isSelected ? 'text-blue-500' : 'text-slate-400';
+                    
                     btn.innerHTML = `
                         <div class="flex items-center gap-2 overflow-hidden">
                             <i class="fas ${room.isPrivate ? 'fa-lock' : 'fa-hashtag'} ${iconColor} w-4 text-center flex-shrink-0"></i>
                             <span class="truncate">${room.name}</span>
-                        </div>
-                    `;
+                        </div>`;
                     listEl.appendChild(btn);
                 });
             });
@@ -373,11 +291,10 @@
             const name = document.getElementById('newRoomNameInput').value.trim();
             const isPrivate = document.getElementById('isPrivateCheckbox').checked;
             const password = document.getElementById('newRoomPasswordInput').value.trim();
-
             if (!name) return;
-
+            
             try {
-                const roomsRef = collection(db, 'artifacts', appId, 'metadata', 'rooms');
+                const roomsRef = collection(db, 'artifacts', chatAppId, 'rooms');
                 const docRef = await addDoc(roomsRef, {
                     name: name,
                     isPrivate: isPrivate,
@@ -385,9 +302,8 @@
                     creatorId: currentUser.uid,
                     createdAt: serverTimestamp()
                 });
-                
                 closeCreateRoomModal();
-                switchRoom(docRef.id); // Jump directly to new room
+                switchRoom(docRef.id);
             } catch (err) {
                 console.error("Failed to create room:", err);
                 showModal("Error", "Could not create the room.");
@@ -416,23 +332,20 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
-        // --- Room Switching & Passwords ---
         window.switchRoom = (roomId) => {
             if (roomId === currentRoomId) return;
-
             if (roomId === 'public') {
                 proceedToRoom('public', 'Global Room');
                 return;
             }
-
+            
             const roomData = dynamicRooms[roomId];
             if (!roomData) return;
-
+            
             if (roomData.isPrivate) {
                 pendingRoomId = roomId;
                 document.getElementById('roomPasswordInput').value = '';
                 document.getElementById('passwordError').classList.add('hidden');
-                
                 const modal = document.getElementById('passwordModal');
                 modal.classList.remove('hidden');
                 void modal.offsetWidth;
@@ -475,14 +388,13 @@
             currentRoomId = roomId;
             currentRoomName = roomName;
             
-            // Update Sidebar UI Styles
             document.querySelectorAll('[id^="roomBtn-"]').forEach(btn => {
                 btn.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 font-medium transition-colors text-left";
                 const icon = btn.querySelector('i');
                 if (icon) {
-                   if (icon.classList.contains('fa-globe')) icon.className = "fas fa-globe text-slate-400 w-4 text-center";
-                   else if (icon.classList.contains('fa-hashtag')) icon.className = "fas fa-hashtag text-slate-400 w-4 text-center flex-shrink-0";
-                   else if (icon.classList.contains('fa-lock')) icon.className = "fas fa-lock text-slate-400 w-4 text-center flex-shrink-0";
+                    if (icon.classList.contains('fa-globe')) icon.className = "fas fa-globe text-slate-400 w-4 text-center";
+                    else if (icon.classList.contains('fa-hashtag')) icon.className = "fas fa-hashtag text-slate-400 w-4 text-center flex-shrink-0";
+                    else if (icon.classList.contains('fa-lock')) icon.className = "fas fa-lock text-slate-400 w-4 text-center flex-shrink-0";
                 }
             });
             
@@ -493,18 +405,16 @@
                 if (icon) {
                     if (icon.classList.contains('fa-globe')) icon.className = "fas fa-globe text-blue-500 w-4 text-center";
                     else if (icon.classList.contains('fa-hashtag')) icon.className = "fas fa-hashtag text-blue-500 w-4 text-center flex-shrink-0";
-                    else if (icon.classList.contains('fa-lock')) icon.className = "fas fa-lock text-slate-400 w-4 text-center flex-shrink-0"; // keep lock grey
                 }
             }
-
+            
             document.getElementById('currentRoomTitle').textContent = roomName;
-
+            
             if (unsubscribeSync) unsubscribeSync();
             document.getElementById('messagesContainer').innerHTML = '<div class="flex items-center justify-center h-full text-slate-400"><i class="fas fa-circle-notch fa-spin text-2xl"></i></div>';
             startMessageSync();
         }
 
-        // --- UI Setup & Events ---
         function setupUI() {
             document.getElementById('loginForm').addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -518,10 +428,10 @@
                     proceedToRoom(currentRoomId, currentRoomName);
                 }
             });
-
+            
             document.getElementById('messageForm').addEventListener('submit', handleSendMessage);
             document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-
+            
             const picker = document.getElementById('emojiPicker');
             emojis.forEach(emoji => {
                 const btn = document.createElement('button');
@@ -534,15 +444,18 @@
                 };
                 picker.appendChild(btn);
             });
-
+            
             document.getElementById('emojiBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 picker.classList.toggle('active');
             });
+            
             document.addEventListener('click', (e) => {
-                if (!picker.contains(e.target) && e.target !== document.getElementById('emojiBtn')) picker.classList.remove('active');
+                if (!picker.contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+                    picker.classList.remove('active');
+                }
             });
-
+            
             window.addEventListener('beforeunload', () => localStorage.setItem('nexus_lastRead', Date.now().toString()));
             setInterval(() => {
                 if(document.visibilityState === 'visible') localStorage.setItem('nexus_lastRead', Date.now().toString());
@@ -559,22 +472,21 @@
             document.getElementById('loginOverlay').classList.remove('hidden');
         };
 
-        // --- Data Sync ---
+        // Message Syncing (Paths Fixed)
         function startMessageSync() {
             if (!currentUser) return;
-            
-            const messagesRef = collection(db, 'artifacts', appId, currentRoomId, 'data', 'messages');
+            const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
             
             unsubscribeSync = onSnapshot(messagesRef, (snapshot) => {
                 document.getElementById('loadingMessages').style.display = 'none';
-                
                 const messages = [];
+                
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const time = data.timestamp ? data.timestamp.toMillis() : Date.now();
                     messages.push({ id: doc.id, ...data, time });
                 });
-
+                
                 messages.sort((a, b) => a.time - b.time);
                 renderMessages(messages);
                 checkNotifications(messages);
@@ -582,7 +494,6 @@
                 document.getElementById('messageCount').textContent = `${messages.length} msgs`;
                 const container = document.getElementById('messagesContainer');
                 container.scrollTop = container.scrollHeight;
-
             }, (error) => {
                 console.error("Sync error:", error);
             });
@@ -597,38 +508,42 @@
                 document.getElementById('notificationText').textContent = `${missed.length} new message${missed.length > 1 ? 's' : ''}`;
                 toast.classList.remove('opacity-0', '-translate-y-4');
                 toast.classList.add('opacity-100', 'translate-y-0');
+                
                 setTimeout(() => {
                     toast.classList.remove('opacity-100', 'translate-y-0');
                     toast.classList.add('opacity-0', '-translate-y-4');
                 }, 4000);
             }
+            
             if(document.visibilityState === 'visible') {
                 lastReadTime = Date.now();
                 localStorage.setItem('nexus_lastRead', lastReadTime.toString());
             }
         }
 
-        // --- File Handling ---
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
-
+            
             if (file.size > MAX_FILE_SIZE) {
                 showModal("File Too Large", `Files must be smaller than ${Math.round(MAX_FILE_SIZE/1024)}KB.`);
                 e.target.value = '';
                 return;
             }
-
+            
             const reader = new FileReader();
             reader.onload = (event) => {
                 activeFile = { name: file.name, type: file.type.startsWith('image/') ? 'image' : 'file', mime: file.type };
                 activeFileDataUrl = event.target.result;
-                
                 document.getElementById('filePreviewContainer').classList.remove('hidden');
                 document.getElementById('filePreviewName').textContent = file.name;
                 const iconContainer = document.getElementById('filePreviewIcon');
-                if (activeFile.type === 'image') iconContainer.innerHTML = `<img src="${activeFileDataUrl}" class="w-full h-full object-cover">`;
-                else iconContainer.innerHTML = `<i class="fas fa-file-alt text-xl"></i>`;
+                
+                if (activeFile.type === 'image') {
+                    iconContainer.innerHTML = `<img src="${activeFileDataUrl}" class="w-full h-full object-cover">`;
+                } else {
+                    iconContainer.innerHTML = '<i class="fas fa-file-alt text-xl"></i>';
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -640,20 +555,19 @@
             document.getElementById('filePreviewContainer').classList.add('hidden');
         };
 
-        // --- Sending Messages ---
         async function handleSendMessage(e) {
             e.preventDefault();
             if (!currentUser) return;
-
+            
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text && !activeFile) return;
-
+            
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
-
+            
             try {
-                const messagesRef = collection(db, 'artifacts', appId, currentRoomId, 'data', 'messages');
+                const messagesRef = collection(db, 'artifacts', chatAppId, 'rooms', currentRoomId, 'messages');
                 const messageData = {
                     text: text,
                     sender: displayName,
@@ -661,11 +575,11 @@
                     timestamp: serverTimestamp(),
                     hasAttachment: !!activeFile
                 };
-
+                
                 if (activeFile) {
                     messageData.attachment = { name: activeFile.name, type: activeFile.type, data: activeFileDataUrl };
                 }
-
+                
                 await addDoc(messagesRef, messageData);
                 input.value = '';
                 clearFile();
@@ -678,22 +592,21 @@
             }
         }
 
-        // --- Rendering ---
         function renderMessages(messages) {
             const container = document.getElementById('messagesContainer');
             if (messages.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400"><i class="far fa-comments text-4xl mb-3"></i><p>No messages yet in this room.</p></div>`;
+                container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-400"><i class="far fa-comments text-4xl mb-3"></i><p>No messages yet in this room.</p></div>';
                 return;
             }
-
+            
             container.innerHTML = '';
             let lastDateStr = '';
-
+            
             messages.forEach(msg => {
                 const isMine = msg.senderId === currentUser.uid;
                 const msgTime = new Date(msg.time);
-                
                 const dateStr = msgTime.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+                
                 if (dateStr !== lastDateStr) {
                     const divider = document.createElement('div');
                     divider.className = 'flex justify-center my-4';
@@ -701,11 +614,11 @@
                     container.appendChild(divider);
                     lastDateStr = dateStr;
                 }
-
+                
                 const timeStr = msgTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const bubble = document.createElement('div');
                 bubble.className = `flex w-full mb-4 ${isMine ? 'justify-end' : 'justify-start'}`;
-
+                
                 let attachmentHtml = '';
                 if (msg.hasAttachment && msg.attachment) {
                     if (msg.attachment.type === 'image') {
@@ -714,7 +627,7 @@
                         attachmentHtml = `<a href="${msg.attachment.data}" download="${msg.attachment.name}" class="mt-2 mb-1 flex items-center gap-2 bg-black/5 p-2 rounded-lg hover:bg-black/10 transition-colors"><i class="fas fa-file-download text-xl opacity-70"></i><span class="text-sm font-medium truncate max-w-[150px]">${msg.attachment.name}</span></a>`;
                     }
                 }
-
+                
                 bubble.innerHTML = `
                     <div class="flex flex-col max-w-[80%] sm:max-w-[65%] ${isMine ? 'items-end' : 'items-start'}">
                         ${!isMine ? `<span class="text-xs text-slate-500 ml-2 mb-1 font-medium">${msg.sender}</span>` : ''}
@@ -723,8 +636,7 @@
                             ${attachmentHtml}
                             <span class="text-[10px] opacity-70 mt-1 block ${isMine ? 'text-right text-blue-100' : 'text-right text-slate-400'}">${timeStr}</span>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 container.appendChild(bubble);
             });
         }
